@@ -52,4 +52,5 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: rootpassword
           SPRING_PROFILES_ACTIVE: local
           BOOKING_SERVICE_URL: http://localhost:8080
+          CUSTOMER_SERVICE_URL: http://localhost:8081
         run: ./mvnw test
