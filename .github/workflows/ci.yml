@@ -1,0 +1,55 @@
+name: CI — Review Service
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    name: Kör tester
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: reviewservice
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checka ut koden
+        uses: actions/checkout@v4
+
+      - name: Sätt upp Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Vänta på MySQL
+        run: |
+          until mysqladmin ping -h 127.0.0.1 -u root -prootpassword --silent; do
+            echo "Väntar på MySQL..."
+            sleep 3
+          done
+
+      - name: Kör tester
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/reviewservice?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: rootpassword
+          SPRING_PROFILES_ACTIVE: local
+          BOOKING_SERVICE_URL: http://localhost:8080
+        run: ./mvnw test
